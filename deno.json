@@ -1,0 +1,17 @@
+{
+  "name": "@yelix/trace",
+  "version": "0.1.0",
+  "license": "MIT",
+  "exports": {
+    ".": "./mod.ts",
+    "./cli": "./cli.ts"
+  },
+  "tasks": {
+    "dev": "deno run --allow-all --watch cli.ts --secret=dev",
+    "check": "deno check mod.ts cli.ts",
+    "test": "deno test --allow-net"
+  },
+  "publish": {
+    "include": ["deno.json", "mod.ts", "cli.ts", "src", "README.md"]
+  }
+}
