@@ -5,6 +5,8 @@ export interface TuiOptions {
   store: TraceStore;
   /** Public URL of the trace server, shown in the header. */
   url: string;
+  /** CLI version, shown in the footer. */
+  version: string;
 }
 
 const E = "\x1b[";
@@ -68,7 +70,7 @@ function scrollWindow(idx: number, prev: number, height: number): number {
 
 /** Takes over the terminal (alternate screen) until the user quits with `q` / Ctrl-C. */
 export function startTui(options: TuiOptions): void {
-  const { store, url } = options;
+  const { store, url, version } = options;
   const state: TuiState = {
     focus: "traces",
     sessionIdx: 0,
@@ -266,14 +268,21 @@ export function startTui(options: TuiOptions): void {
     const focusTag = `[${state.focus}]`;
     // columns - 1: some Windows terminals scroll the screen when the
     // bottom-right cell is written, which would push the footer off-screen.
-    const footerPlain = ` ${focusTag}  tab/1/2/3: pane · ↑↓/j/k: move · q: quit`
-      .padEnd(columns - 1);
+    const footerPlain =
+      ` ${focusTag}  tab/1/2/3: pane · ↑↓/j/k: move · q: quit · v${version}`
+        .padEnd(columns - 1);
     lines.push(
       ` ${BOLD}${focusTag}${RESET}${FG.gray}${
         footerPlain.slice(1 + focusTag.length)
       }${RESET}`,
     );
-    write(`${E}H` + lines.join("\r\n"));
+    // Absolute cursor addressing per line — immune to newline/wrap quirks
+    // that can swallow the last line on ConPTY-based terminals.
+    let frame = "";
+    for (let i = 0; i < lines.length; i++) {
+      frame += `${E}${i + 1};1H${lines[i]}`;
+    }
+    write(frame);
   };
 
   const move = (delta: number): void => {

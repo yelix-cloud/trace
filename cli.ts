@@ -1,7 +1,10 @@
+import pkg from "./deno.json" with { type: "json" };
 import { fmtTime } from "./src/fmt.ts";
 import { startTraceServer } from "./src/server.ts";
 import { TraceStore } from "./src/store.ts";
 import { startTui } from "./src/tui.ts";
+
+const VERSION = pkg.version;
 
 const USAGE = `yelix-trace — terminal trace viewer for Yelix apps
 
@@ -48,7 +51,7 @@ function parseArgs(argv: string[]): CliArgs {
 
 /** Plain-line output for non-TTY environments (CI logs, piping) or --headless. */
 function headless(store: TraceStore, url: string): void {
-  console.log(`yelix-trace listening, waiting first log — ${url}`);
+  console.log(`yelix-trace v${VERSION} listening, waiting first log — ${url}`);
   let seenSessions = 0;
   const printed = new Set<string>();
   store.subscribe(() => {
@@ -102,7 +105,7 @@ export async function main(): Promise<void> {
   if (args.headless || !Deno.stdin.isTerminal()) {
     headless(store, server.url);
   } else {
-    startTui({ store, url: server.url });
+    startTui({ store, url: server.url, version: VERSION });
   }
 }
 
