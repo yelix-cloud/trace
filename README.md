@@ -4,6 +4,8 @@ Dev-time request tracing for Yelix apps. Framework logs interleave when requests
 run in parallel — `yelix-trace` correlates every event by `requestId` and shows
 each request as its own trace in a terminal UI.
 
+![yelix-trace terminal UI: sessions, traces and request preview panes](./images/vscode.png)
+
 ## Quickstart
 
 Start the collector (a TUI with sessions, traces and a request preview):

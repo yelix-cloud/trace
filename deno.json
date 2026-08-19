@@ -1,6 +1,6 @@
 {
   "name": "@yelix/trace",
-  "version": "0.1.9",
+  "version": "0.1.10",
   "license": "MIT",
   "exports": {
     ".": "./mod.ts",
@@ -12,6 +12,6 @@
     "test": "deno test --allow-net"
   },
   "publish": {
-    "include": ["deno.json", "mod.ts", "cli.ts", "src", "README.md"]
+    "include": ["deno.json", "mod.ts", "cli.ts", "src", "README.md", "images"]
   }
 }
