@@ -94,6 +94,13 @@ export function startTui(options: TuiOptions): void {
   const cleanup = (): void => {
     if (state.closed) return;
     state.closed = true;
+    // Raw mode must be released before exit or the parent shell stays broken
+    // (no line editing, Enter stops working).
+    try {
+      Deno.stdin.setRaw(false);
+    } catch {
+      // stdin may already be closed.
+    }
     write(RESET + `${E}?25h` + `${E}?1049l`);
     Deno.exit(0);
   };
@@ -360,6 +367,7 @@ export function startTui(options: TuiOptions): void {
     state.dirty = true;
   });
   Deno.addSignalListener("SIGINT", cleanup);
+  Deno.addSignalListener("SIGTERM", cleanup);
   Deno.stdin.setRaw(true);
   write(`${E}?1049h${E}?25l`);
   setInterval(tick, 100);
