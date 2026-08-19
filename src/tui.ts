@@ -98,9 +98,11 @@ export function startTui(options: TuiOptions): void {
     Deno.exit(0);
   };
 
-  const selectedSession = (): Session | undefined => {
-    const sessions = store.sessions;
-    if (state.followSession) state.sessionIdx = sessions.length - 1;
+  // Both panes display newest first: index 0 is the latest entry.
+  const orderedSessions = (): Session[] => [...store.sessions].reverse();
+
+  const selectedSession = (sessions: Session[]): Session | undefined => {
+    if (state.followSession) state.sessionIdx = 0;
     state.sessionIdx = Math.min(
       Math.max(state.sessionIdx, 0),
       sessions.length - 1,
@@ -111,13 +113,12 @@ export function startTui(options: TuiOptions): void {
   const selectedTraces = (session: Session | undefined): Trace[] => {
     if (!session) return [];
     return [...session.traces.values()].sort((a, b) =>
-      a.startedAt - b.startedAt
+      b.startedAt - a.startedAt
     );
   };
 
-  const sessionsPane = (height: number): Cell[] => {
+  const sessionsPane = (sessions: Session[], height: number): Cell[] => {
     const cells: Cell[] = [{ text: " Sessions", fg: BOLD }];
-    const sessions = store.sessions;
     const itemsHeight = height - 1;
     state.sessionScroll = scrollWindow(
       state.sessionIdx,
@@ -137,7 +138,6 @@ export function startTui(options: TuiOptions): void {
         text: ` ${live} #${s.id} ${
           fmtTime(s.startedAt)
         } · ${s.traces.size} tr${implicit}`,
-        fg: idx === state.sessionIdx ? undefined : undefined,
       });
     }
     return cells;
@@ -217,9 +217,10 @@ export function startTui(options: TuiOptions): void {
     const previewW = columns - sessionsW - tracesW - 2;
     const contentRows = rows - 4;
 
-    const session = selectedSession();
+    const sessions = orderedSessions();
+    const session = selectedSession(sessions);
     const traces = selectedTraces(session);
-    if (state.followTrace) state.traceIdx = traces.length - 1;
+    if (state.followTrace) state.traceIdx = 0;
     state.traceIdx = Math.min(Math.max(state.traceIdx, 0), traces.length - 1);
     const trace = traces[state.traceIdx];
     if (trace && trace.requestId !== state.lastTraceId) {
@@ -227,7 +228,7 @@ export function startTui(options: TuiOptions): void {
       state.lastTraceId = trace.requestId;
     }
 
-    const sCol = sessionsPane(contentRows);
+    const sCol = sessionsPane(sessions, contentRows);
     const tCol = tracesPane(session, traces, contentRows);
     const pCol = previewPane(trace, contentRows);
 
@@ -275,18 +276,18 @@ export function startTui(options: TuiOptions): void {
         Math.max(state.sessionIdx + delta, 0),
         len - 1,
       );
-      state.followSession = state.sessionIdx === len - 1;
+      state.followSession = state.sessionIdx === 0;
       state.followTrace = true;
       state.traceScroll = 0;
     } else if (state.focus === "traces") {
-      const traces = selectedTraces(store.sessions[state.sessionIdx]);
+      const traces = selectedTraces(orderedSessions()[state.sessionIdx]);
       if (traces.length === 0) return;
       state.followTrace = false;
       state.traceIdx = Math.min(
         Math.max(state.traceIdx + delta, 0),
         traces.length - 1,
       );
-      state.followTrace = state.traceIdx === traces.length - 1;
+      state.followTrace = state.traceIdx === 0;
     } else {
       state.previewScroll = Math.max(0, state.previewScroll + delta);
     }
