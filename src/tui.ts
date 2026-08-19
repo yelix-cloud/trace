@@ -87,7 +87,13 @@ export function startTui(options: TuiOptions): void {
 
   const write = (s: string): void => {
     try {
-      Deno.stdout.writeSync(new TextEncoder().encode(s));
+      const bytes = new TextEncoder().encode(s);
+      // writeSync may short-write large frames; loop or the frame's tail
+      // (bottom rule + footer) silently goes missing.
+      let offset = 0;
+      while (offset < bytes.length) {
+        offset += Deno.stdout.writeSync(bytes.subarray(offset));
+      }
     } catch {
       // Terminal went away; nothing useful to do.
     }
@@ -227,16 +233,14 @@ export function startTui(options: TuiOptions): void {
 
   const render = (): void => {
     const { rows, columns } = Deno.consoleSize();
-    if (rows < 9 || columns < 40) {
+    if (rows < 8 || columns < 40) {
       write(`${E}H${E}2Jterminal too small`);
       return;
     }
     const sessionsW = Math.max(20, Math.min(28, Math.floor(columns * 0.2)));
     const tracesW = Math.max(28, Math.min(46, Math.floor(columns * 0.3)));
     const previewW = columns - sessionsW - tracesW - 2;
-    // rows - 5 (not - 4): some Windows consoles reserve/clip the last row,
-    // so the footer must never be written to the bottom-most screen row.
-    const contentRows = rows - 5;
+    const contentRows = rows - 4;
 
     const sessions = orderedSessions();
     const session = selectedSession(sessions);
