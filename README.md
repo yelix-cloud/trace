@@ -12,6 +12,10 @@ Start the collector (a TUI with sessions, traces and a request preview):
 dx jsr:@yelix/trace/cli --secret=dev-secret --port=7357
 ```
 
+> `dx` is Deno's package runner (Deno 2.6+). Install the alias once if you
+> haven't before: `deno x --install-alias`. Without it, the equivalent is
+> `deno x jsr:@yelix/trace/cli --secret=dev-secret --port=7357`.
+
 Attach the reporter to your app — works with `@yelix/hono` and `@yelix/express`,
 no framework changes needed:
 
