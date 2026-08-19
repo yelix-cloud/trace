@@ -264,8 +264,10 @@ export function startTui(options: TuiOptions): void {
     }
     lines.push(rule);
     const focusTag = `[${state.focus}]`;
+    // columns - 1: some Windows terminals scroll the screen when the
+    // bottom-right cell is written, which would push the footer off-screen.
     const footerPlain = ` ${focusTag}  tab/1/2/3: pane · ↑↓/j/k: move · q: quit`
-      .padEnd(columns);
+      .padEnd(columns - 1);
     lines.push(
       ` ${BOLD}${focusTag}${RESET}${FG.gray}${
         footerPlain.slice(1 + focusTag.length)
