@@ -93,6 +93,16 @@ export function startTui(options: TuiOptions): void {
     }
   };
 
+  // Set YELIX_TRACE_DEBUG_FRAME=<path> to dump each rendered frame (plain
+  // text) for diagnosing terminal-specific rendering issues.
+  const debugFramePath = ((): string | undefined => {
+    try {
+      return Deno.env.get("YELIX_TRACE_DEBUG_FRAME") || undefined;
+    } catch {
+      return undefined;
+    }
+  })();
+
   const cleanup = (): void => {
     if (state.closed) return;
     state.closed = true;
@@ -242,8 +252,11 @@ export function startTui(options: TuiOptions): void {
     const pCol = previewPane(trace, contentRows);
 
     const headerText =
-      ` yelix-trace │ ${url} │ sessions: ${store.sessions.length}`;
-    const header = FG.gray + headerText.padEnd(columns) + RESET;
+      ` yelix-trace v${version} │ ${url} │ sessions: ${store.sessions.length}`;
+    const headerTrimmed = headerText.length > columns
+      ? headerText.slice(0, columns - 1) + "…"
+      : headerText.padEnd(columns);
+    const header = FG.gray + headerTrimmed + RESET;
     const rule = FG.gray + "─".repeat(columns) + RESET;
     const sep = FG.gray + "│" + RESET;
 
@@ -283,6 +296,21 @@ export function startTui(options: TuiOptions): void {
       frame += `${E}${i + 1};1H${lines[i]}`;
     }
     write(frame);
+    if (debugFramePath) {
+      try {
+        const esc = String.fromCharCode(27);
+        const ansiPattern = new RegExp(`${esc}\\[[0-9;?]*[a-zA-Z]`, "g");
+        const plain = lines
+          .map((l) => l.replace(ansiPattern, ""))
+          .join("\n");
+        Deno.writeTextFileSync(
+          debugFramePath,
+          `rows=${rows} cols=${columns} lines=${lines.length}\n${plain}\n`,
+        );
+      } catch {
+        // Debug dump is best-effort.
+      }
+    }
   };
 
   const move = (delta: number): void => {
